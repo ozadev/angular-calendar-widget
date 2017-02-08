@@ -1,0 +1,16 @@
+{
+  "name": "restorer-production",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "oza",
+  "license": "ISC",
+  "dependencies": {
+    "angular": "^1.6.0",
+    "angular-animate": "^1.6.1",
+    "normalize.css": "^5.0.0"
+  }
+}

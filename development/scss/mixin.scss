@@ -1,0 +1,28 @@
+//
+// Responsive design media queries
+// -Desktop first principle-
+//
+
+//$laptop-width: 1200px;
+$tablet-width: 1199px;
+$mobile-width: 767px;
+$total-container-width: 1559px;
+//$max-width: 1920px;
+
+@mixin tablet {
+  @media (max-width: #{$tablet-width}) {
+    @content;
+  }
+}
+
+@mixin mobile {
+  @media (max-width: #{$mobile-width}) {
+    @content;
+  }
+}
+
+@mixin desktop-fluid {
+  @media (max-width: #{$total-container-width}) {
+    @content;
+  }
+}
