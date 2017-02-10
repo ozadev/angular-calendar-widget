@@ -16,18 +16,24 @@
                     var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
                     var listReserveNum = 10;
                     var listShowNum = 12;
+                    var listItemHeight = 50;
                     var currentDate = new Date();
-                    currentDate.setMonth(0);
-                    currentDate.setYear(2015);
+                    var currShift = listReserveNum;
+                    var count = 0;
+                    var yearInsertOffset = 0;
 
-                    var test = new Date();
+                    // initialization
 
+                    //new Date(year, month, date, hours, minutes, seconds, ms)
+                    currentDate.setFullYear(2016);
+                    currentDate.setMonth(9);
+                    console.log(currentDate);
 
                     scope.monthList = monthListInit();
+                    monthListOffset();
 
                     element.on("mousewheel DOMMouseScroll", onScroll);
 
-                    // console.log(test);
                     // console.log(test.getMonth()); //FEB === 1
 
                     //
@@ -36,14 +42,19 @@
                     function monthListInit() {
                         var monthList = [];
                         var length = listReserveNum * 2 + listShowNum;
-                        var start = -parseInt(length/2);
+                        var middle = parseInt(length/2);
 
                         var date = new Date(currentDate);
-                        date.setDate(start);
+
+                        date.setMonth(currentDate.getMonth() - middle);
+
                         for(var i = 0; i < length; i++) {
                             var currMonth = date.getMonth();
                             if(currMonth === 0) {
                                 monthList.push(date.getFullYear());
+                                if(i <= middle) {
+                                    yearInsertOffset++;
+                                }
                                 i++;
                             }
                             monthList.push(currMonth);
@@ -55,25 +66,47 @@
                         return monthList;
                     }
 
-                    var currShift = 0;
-                    element[0].querySelector('.calendar-month-list').style.top = (currShift * 50 + 25) + 'px';
+                    function monthListOffset() {
+                        console.log(listReserveNum);
+                        console.log(yearInsertOffset);
+                        currShift = listReserveNum + yearInsertOffset;
+                        element[0].querySelector('.calendar-month-list').style.top = (-currShift * listItemHeight - listItemHeight / 2) + 'px';
+                    }
+
 
                     function onScroll(e) {
                         e.preventDefault();
-                        // console.log('scroll');
-                        // console.log(e);
 
-                        if (e.wheelDeltaY > 0) {
-                            currShift++;
+                        count++;
+
+                        if(count >= 2) {
+                            count = 0;
+                            if (e.wheelDeltaY > 0) {
+                                currShift--;
+                                currentDate.setMonth(currentDate.getMonth() - 1);
+                                if (currShift < parseInt((listReserveNum * 2 + listShowNum)/2 - listShowNum / 2)) {
+                                    scope.monthList = monthListInit();
+                                    monthListOffset();
+                                }
+                            }
+                            else {
+                                currShift++;
+                                currentDate.setMonth(currentDate.getMonth() + 1);
+                                if (currShift > parseInt((listReserveNum * 2 + listShowNum)/2 + listShowNum / 2)) {
+                                    scope.monthList = monthListInit();
+                                    monthListOffset();
+                                }
+                            }
+                            console.log(currentDate);
                         }
-                        else {
-                            currShift--;
-                        }
 
-
-                        element[0].querySelector('.calendar-month-list').style.top = (currShift * 50 + 25) + 'px';
+                        element[0].querySelector('.calendar-month-list').style.top = (-currShift * listItemHeight - listItemHeight / 2) + 'px';
 
                     }
+
+                    // function clickTest() {
+                    //     scope.monthList = scope.monthList.slice(1);
+                    // }
                 }
             }
         }]
