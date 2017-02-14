@@ -4,7 +4,8 @@
 
     angular.module('calendarWidget').directive('calendarSidebar', [
         '$document',
-        function ($document) {
+        '$timeout',
+        function ($document, $timeout) {
             return {
                 templateUrl: '/app/calendar/calendarSidebar/calendarSidebar.html',
                 restrict: 'AE',
@@ -13,100 +14,161 @@
 
                 },
                 link: function (scope, element, attr) {
-                    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                    var listReserveNum = 10;
-                    var listShowNum = 12;
-                    var listItemHeight = 50;
-                    var currentDate = new Date();
-                    var currShift = listReserveNum;
-                    var count = 0;
-                    var yearInsertOffset = 0;
+                    var listConfigSideReserve = 20;
+                    var listConfigShowLength = 12;
+                    var listConfigItemHeight = 50;
+                    var baseMonth = new Date();
+                    var selectedIndex = listConfigSideReserve;
+                    var scrollDebounceValue = 2;
+                    var scrollCount = 0;
+                    var listOutLimit;
+                    var listOutLimitCount = 0;
+                    var listOutLimitMax = 5;
+                    var listElement = angular.element(element[0].querySelector(".calendar-month-list"));
+
+                    scope.getMonthName = getMonthName;
 
                     // initialization
 
                     //new Date(year, month, date, hours, minutes, seconds, ms)
-                    currentDate.setFullYear(2016);
-                    currentDate.setMonth(9);
-                    console.log(currentDate);
+                    // baseMonth.setFullYear(2016);
+                    // baseMonth.setMonth(9);
+                    console.log(baseMonth);
 
-                    scope.monthList = monthListInit();
+                    listGenerate();
                     monthListOffset();
+                    console.table(scope.monthList);
+                    console.log(selectedIndex);
 
                     element.on("mousewheel DOMMouseScroll", onScroll);
 
-                    // console.log(test.getMonth()); //FEB === 1
-
                     //
                     //
                     //
-                    function monthListInit() {
-                        var monthList = [];
-                        var length = listReserveNum * 2 + listShowNum;
-                        var middle = parseInt(length/2);
+                    function listGenerate() {
+                        var list = [];
+                        var decLength = Math.floor(listConfigShowLength / 2) + listConfigSideReserve;
+                        var incLength = Math.ceil(listConfigShowLength / 2) + listConfigSideReserve;
 
-                        var date = new Date(currentDate);
+                        var date = new Date(baseMonth);
+                        var year = date.getFullYear();
+                        date.setMonth(date.getMonth() - 1);
 
-                        date.setMonth(currentDate.getMonth() - middle);
-
-                        for(var i = 0; i < length; i++) {
-                            var currMonth = date.getMonth();
-                            if(currMonth === 0) {
-                                monthList.push(date.getFullYear());
-                                if(i <= middle) {
-                                    yearInsertOffset++;
-                                }
-                                i++;
+                        for(var i = decLength - 1; i >= 0; i--) {
+                            if(date.getFullYear() !== year) {
+                                list[i] = {
+                                    key: year,
+                                    date: date.toISOString()
+                                };
+                                year = date.getFullYear();
+                                continue;
                             }
-                            monthList.push(currMonth);
-                            date.setMonth(currMonth + 1);
+                            list[i] = {
+                                key: date.getMonth(),
+                                date: date.toISOString()
+                            };
+                            date.setMonth(date.getMonth() - 1);
                         }
 
-                        console.log(monthList);
+                        date = new Date(baseMonth);
+                        year = date.getFullYear();
 
-                        return monthList;
+                        for(i = decLength; i < decLength + incLength; i++) {
+                            if(date.getFullYear() !== year) {
+                                list[i] = {
+                                    key: date.getFullYear(),
+                                    date: date.toISOString()
+                                };
+                                year = date.getFullYear();
+                                continue;
+                            }
+                            list[i] = {
+                                key: date.getMonth(),
+                                date: date.toISOString()
+                            };
+                            date.setMonth(date.getMonth() + 1);
+                        }
+
+                        scope.monthList = list;
+                        selectedIndex = decLength;
+
                     }
 
                     function monthListOffset() {
-                        console.log(listReserveNum);
-                        console.log(yearInsertOffset);
-                        currShift = listReserveNum + yearInsertOffset;
-                        element[0].querySelector('.calendar-month-list').style.top = (-currShift * listItemHeight - listItemHeight / 2) + 'px';
+                        var listOffset = Math.floor(listConfigShowLength / 2) - selectedIndex;
+                        var listOffsetPixels = listOffset * listConfigItemHeight - listConfigItemHeight / 2;
+                        listElement.css('top', listOffsetPixels + 'px');
                     }
 
+                    listElement.on("transitionend", function(event) {
+                        if(listOutLimit) {
+                            listOutLimit = false;
+                            listOutLimitCount = 0;
+                            listElement.css('transition', 'none');
+                            scope.$apply(listGenerate());
+                            scope.$apply(monthListOffset());
+                        }
+                    });
 
                     function onScroll(e) {
+                        var scrollDirectionTop = e.wheelDeltaY > 0;
+
                         e.preventDefault();
 
-                        count++;
+                        scrollCount++;
 
-                        if(count >= 2) {
-                            count = 0;
-                            if (e.wheelDeltaY > 0) {
-                                currShift--;
-                                currentDate.setMonth(currentDate.getMonth() - 1);
-                                if (currShift < parseInt((listReserveNum * 2 + listShowNum)/2 - listShowNum / 2)) {
-                                    scope.monthList = monthListInit();
-                                    monthListOffset();
+                        if(scrollCount >= scrollDebounceValue) {
+                            scrollCount = 0;
+
+                            if (scrollDirectionTop) {
+                                if(listOutLimitCount < listOutLimitMax)
+                                    selectedIndex--;
+
+                                if (selectedIndex < Math.ceil(listConfigShowLength)) {
+                                    baseMonth = new Date(scope.monthList[selectedIndex].date);
+                                    listOutLimit = true;
+                                    listOutLimitCount++;
                                 }
                             }
                             else {
-                                currShift++;
-                                currentDate.setMonth(currentDate.getMonth() + 1);
-                                if (currShift > parseInt((listReserveNum * 2 + listShowNum)/2 + listShowNum / 2)) {
-                                    scope.monthList = monthListInit();
-                                    monthListOffset();
+                                if(listOutLimitCount < listOutLimitMax)
+                                    selectedIndex++;
+
+                                if (selectedIndex > listConfigShowLength + 2 * listConfigSideReserve - Math.floor(listConfigShowLength)) {
+                                    baseMonth = new Date(scope.monthList[selectedIndex].date);
+                                    listOutLimit = true;
+                                    listOutLimitCount++;
                                 }
                             }
-                            console.log(currentDate);
-                        }
+                            console.log(baseMonth);
 
-                        element[0].querySelector('.calendar-month-list').style.top = (-currShift * listItemHeight - listItemHeight / 2) + 'px';
+                            monthListOffset();
+                        }
 
                     }
 
-                    // function clickTest() {
-                    //     scope.monthList = scope.monthList.slice(1);
-                    // }
+                    function getMonthName(key, isLastItem) {
+                        if(isLastItem) {
+                            $timeout(function() {
+                                listElement.css('transition', '');
+                            }, 0);
+                        }
+
+                        return key;
+
+                        var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                        if(key < months.length) {
+                            return months[key];
+                        }
+                        else {
+                            return key;
+                        }
+                    }
+
+                    scope.test = function() {
+                        console.log('test');
+                    }
+
                 }
             }
         }]
