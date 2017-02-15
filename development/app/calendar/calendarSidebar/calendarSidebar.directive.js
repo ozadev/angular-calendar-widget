@@ -41,6 +41,7 @@
                     console.log(selectedIndex);
 
                     element.on("mousewheel DOMMouseScroll", onScroll);
+                    listElement.on("transitionend", onTransitionEnd);
 
                     //
                     //
@@ -100,7 +101,7 @@
                         listElement.css('top', listOffsetPixels + 'px');
                     }
 
-                    listElement.on("transitionend", function(event) {
+                    function onTransitionEnd() {
                         if(listOutLimit) {
                             listOutLimit = false;
                             listOutLimitCount = 0;
@@ -108,7 +109,7 @@
                             scope.$apply(listGenerate());
                             scope.$apply(monthListOffset());
                         }
-                    });
+                    }
 
                     function onScroll(e) {
                         var scrollDirectionTop = e.wheelDeltaY > 0;
@@ -121,8 +122,9 @@
                             scrollCount = 0;
 
                             if (scrollDirectionTop) {
-                                if(listOutLimitCount < listOutLimitMax)
+                                if(listOutLimitCount < listOutLimitMax) {
                                     selectedIndex--;
+                                }
 
                                 if (selectedIndex < Math.ceil(listConfigShowLength)) {
                                     baseMonth = new Date(scope.monthList[selectedIndex].date);
@@ -131,8 +133,9 @@
                                 }
                             }
                             else {
-                                if(listOutLimitCount < listOutLimitMax)
+                                if(listOutLimitCount < listOutLimitMax) {
                                     selectedIndex++;
+                                }
 
                                 if (selectedIndex > listConfigShowLength + 2 * listConfigSideReserve - Math.floor(listConfigShowLength)) {
                                     baseMonth = new Date(scope.monthList[selectedIndex].date);
@@ -140,7 +143,6 @@
                                     listOutLimitCount++;
                                 }
                             }
-                            console.log(baseMonth);
 
                             monthListOffset();
                         }
@@ -148,16 +150,18 @@
                     }
 
                     function getMonthName(key, isLastItem) {
+
+                        //(Hack) Clear transition disable at the end of ng-repeat values reload
                         if(isLastItem) {
                             $timeout(function() {
                                 listElement.css('transition', '');
                             }, 0);
                         }
 
-                        return key;
+                        // return key;
 
                         var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                        if(key < months.length) {
+                        if(angular.isDefined(months[key])) {
                             return months[key];
                         }
                         else {
